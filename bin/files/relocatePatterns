@@ -1,0 +1,3 @@
+relocate train 1 to 2 with 0
+relocate train 1 to the railway 2 with 0
+relocate the train 1 to 2 with 0
