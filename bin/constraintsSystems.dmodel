@@ -1,0 +1,9 @@
+datatype String
+datatype Integer
+
+package com.rws.constraints { 
+	entity PutTrainRule {
+		trainLengthConstraint : String : sum(trainLentgh)<= RailwayLength
+		wagonsConstraint : String : wagonLength*smth<=totalLength
+	}
+}

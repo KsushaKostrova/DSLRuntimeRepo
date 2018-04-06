@@ -1,34 +1,24 @@
 datatype String
+datatype Integer
 
-package my.company.blog { 
-	
-	import my.company.common.*
-	
-	entity Blog { 
-		title : String 
-	} 
-
-entity SmthNewNew { 
-		kuku : String
-		lalala : String
+package com.rws.data { 
+	entity TrainInfo {
+		trainId : Integer
+		trainLength : Integer
+		trainStartNick : Integer
 		method pr : System.out.println(1)
 	}
 	
-entity NewEntityEntity { 
-		kuku : String
-		lalala : String
-		hey : String
-		method pr : System.out.println(1)
+	entity BrigadeInfo {
+		numberOfPeople : Integer
 	}
-entity ClassFromSaturday { 
-		kuku : String
-		lalala : String
-		method pr : System.out.println(1)
+	
+	entity WagonInfo {
+		
 	}
-
-entity TestClass { 
-		kuku : Integer
-		lalala : String
-		method pr : System.out.println(1)
+	
+	entity RailwayInfo {
+		railwayLentgh : Integer
+		railwayInfo : Integer
 	}
 }

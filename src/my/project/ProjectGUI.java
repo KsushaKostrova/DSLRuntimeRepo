@@ -90,11 +90,12 @@ public class ProjectGUI extends JFrame implements Serializable {
 	transient GridBagConstraints c = new GridBagConstraints();
 
 	private List<String> fields = new ArrayList<String>();
+	ArrayList<JButton> operations;
 	private Map<String, ArrayList<Object>> operationsMap = new HashMap<String, ArrayList<Object>>(0);
 	
 
 	public ProjectGUI() {
-		readFields();
+		createUpdateFields();
 
 		mainFrame.setVisible(true);
 		mainFrame.setPreferredSize(new Dimension(1800, 700));
@@ -112,119 +113,11 @@ public class ProjectGUI extends JFrame implements Serializable {
 		setTrain.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				JFrame addTrainInfo = new JFrame("Train");
-				addTrainInfo.setVisible(true);
-				addTrainInfo.setPreferredSize(new Dimension(300, 450));
-				addTrainInfo.setResizable(false);
-				JTextField location = new JTextField("location");
-				location.setEditable(false);
-				JTextField locationText = new JTextField("");
-				JTextField size = new JTextField("size");
-				size.setEditable(false);
-				JTextField sizeText = new JTextField("");
-
-				GridLayout gl = new GridLayout(2, 2);
-				// gl.addLayoutComponent("location", location);
-				// gl.addLayoutComponent("locationText", locationText);
-				// gl.addLayoutComponent("size", size);
-				// gl.addLayoutComponent("sizeText", sizeText);
-
-				addTrainInfo.setLayout(gl);
-				addTrainInfo.add(location);
-				addTrainInfo.add(locationText);
-				addTrainInfo.add(size);
-				addTrainInfo.add(sizeText);
-				addTrainInfo.setLocation(350, 350);
-				addTrainInfo.pack();
+				new AddInfoGUI("Add information", fields);
 			}
 		});
 		addInfo.add(setTrain);
 
-		MenuItem dbSettings = new MenuItem("Database settings");
-		dbSettings.setFont(new Font("Comic Sans MS", 30, 22));
-		settings.add(dbSettings);
-		dbSettings.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				JFrame setDb = new JFrame("Database settings");
-				setDb.setVisible(true);
-				setDb.setPreferredSize(new Dimension(700, 100));
-				setDb.setResizable(false);
-				JTextField str = new JTextField("Current database name is");
-				str.setVisible(true);
-				str.setEditable(false);
-				str.setPreferredSize(new Dimension(200, 50));
-				str.setFont(new Font("Times New Roman", 18, 18));
-				JTextField dbName = new JTextField(defaultDb);
-				dbName.setVisible(true);
-				dbName.setEditable(true);
-				dbName.setEnabled(true);
-				dbName.setPreferredSize(new Dimension(200, 50));
-				dbName.setFont(new Font("Times New Roman", 18, 18));
-				dbName.addMouseListener(new MouseListener() {
-					@Override
-					public void mouseClicked(MouseEvent e) {
-						if (dbName.getText().equals(defaultDb)) {
-							dbName.setText("");
-						}
-					}
-
-					@Override
-					public void mouseEntered(MouseEvent e) {
-					}
-
-					@Override
-					public void mouseExited(MouseEvent arg0) {
-					}
-
-					@Override
-					public void mousePressed(MouseEvent e) {
-					}
-
-					@Override
-					public void mouseReleased(MouseEvent e) {
-					}
-				});
-				dbName.addFocusListener(new FocusListener() {
-
-					@Override
-					public void focusGained(FocusEvent arg0) {
-					}
-
-					@Override
-					public void focusLost(FocusEvent arg0) {
-						if (dbName.getText().equals(""))
-							dbName.setText(defaultDb);
-					}
-
-				});
-				JButton ok = new JButton("OK");
-				ok.addActionListener(new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						String connectionString = "jdbc:postgresql://localhost:5433/" + dbName.getText();
-						try {
-							conn = DriverManager.getConnection(connectionString, user, password);
-							defaultDb = dbName.getText();
-							refresh();
-							setDb.dispose();
-						} catch (SQLException ex) {
-							JOptionPane.showMessageDialog(null, "No database with this name", "Wrong database name",
-									JOptionPane.ERROR_MESSAGE);
-						}
-
-					}
-				});
-				ok.setPreferredSize(new Dimension(70, 50));
-				setDb.setLayout(new FlowLayout());
-				setDb.add(str);
-				setDb.add(dbName);
-				setDb.add(ok);
-				setDb.setLocation(350, 350);
-				setDb.pack();
-			}
-		});
-		settings.addSeparator();
 		MenuItem languageSettings = new MenuItem("Customize language");
 		languageSettings.setFont(new Font("Comic Sans MS", 30, 22));
 		settings.add(languageSettings);
@@ -241,44 +134,12 @@ public class ProjectGUI extends JFrame implements Serializable {
 				MenuItem newConstruction = new MenuItem("New construction");
 				newConstruction.setFont(new Font("Comic Sans MS", 30, 22));
 				newConstruction.addActionListener(new ActionListener() {
+
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						JFrame createConstruction = new JFrame("Create new constrcution");
-						createConstruction.setVisible(true);
-						createConstruction.setPreferredSize(new Dimension(1050, 300));
-						createConstruction.setLayout(new BorderLayout());
-						JPanel constructionPanel = new JPanel();
-						
-						AbstractTableModel dataModel = new AbstractTableModel() {
-							public int getColumnCount() {
-								return 1;
-							}
-
-							public int getRowCount() {
-								return fields.size()+1;
-							}
-
-							public Object getValueAt(int row, int col) {
-								if (row == 0) {
-									return new JTextArea("").getText();
-								}
-								return new JTextArea(fields.get(row-1)).getText();
-							}
-						};
-						JTable fieldsTable = new JTable(dataModel);
-						fieldsTable.setPreferredSize(new Dimension(300, 150));						
-						constructionPanel.add(fieldsTable);
-						JPanel resultPanel = new JPanel();
-						resultPanel.add(new JTextField("Your new construction:"));
-						JPanel resultTextPanel = new JPanel();
-						resultPanel.add(resultTextPanel);
-						
-						createConstruction.add(resultPanel, BorderLayout.NORTH);
-						createConstruction.add(constructionPanel, BorderLayout.SOUTH);
-						createConstruction.setLocation(350, 350);
-						createConstruction.pack();
+						new ConstructionGUI("Create new construction", fields);
 					}
-
+					
 				});
 				construction.add(newConstruction);
 				MenuItem newField = new MenuItem("New field");
@@ -298,11 +159,14 @@ public class ProjectGUI extends JFrame implements Serializable {
 
 							@Override
 							public void actionPerformed(ActionEvent e) {
-								if (fields.indexOf(fieldName.getText()) == -1) {
-									fields.add(fieldName.getText());
-									saveFields();
-									addField.dispose();
-								}
+								CreateNewField.addNewField(fieldName.getText() + " : Integer");
+								createUpdateFields();
+								addField.dispose();
+//								if (fields.indexOf(fieldName.getText()) == -1) {
+//									fields.add(fieldName.getText());
+//									saveFields();
+//									addField.dispose();
+//								}
 							}
 						});
 
@@ -1601,27 +1465,9 @@ public class ProjectGUI extends JFrame implements Serializable {
 		return false;
 	}
 
-	private void readFields() {
-		FileInputStream fisPut = null;
-		ObjectInputStream inPut = null;
-		try {
-			File fieldsFile = new File("src/files/Fields");
-			boolean fileNotExist = fieldsFile.createNewFile();
-			fisPut = new FileInputStream(fieldsFile);
-			inPut = new ObjectInputStream(fisPut);
-			if (!fileNotExist) {
-				List tempMap = (ArrayList) inPut.readObject();
-				System.out.println(tempMap.size());
-				if (tempMap != null) {
-					fields = tempMap;
-				} else {
-					fields = new ArrayList<String>(0);
-				}
-			}
-			inPut.close();
-		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+	private void createUpdateFields() {
+		fields.clear();
+		fields = ReadWriteFiles.getTheFields();
 	}
 
 	public static void readPatterns(String fileName, String instruction) {

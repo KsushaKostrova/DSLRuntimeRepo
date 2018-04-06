@@ -27,7 +27,7 @@ import javax.swing.JPanel;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.CoreException;
 
-import my.company.blog.SmthNewNew;
+//import my.company.blog.SmthNewNew;
 
 public class MainClass implements Serializable {
 
@@ -65,9 +65,16 @@ public class MainClass implements Serializable {
 			public void actionPerformed(ActionEvent e) {
 				
 		//		if (!mainClass.restarted) {
-					SmthNewNew smth = new SmthNewNew();
-					smth.pr();
-					System.out.println("pr was called");
+			
+				
+//				SmthNewNew smth = new SmthNewNew();
+//					smth.pr();
+//					System.out.println("pr was called");
+					
+					
+					
+					
+					
 //					try {
 //						Files.write(Paths.get("/home/ksusha/runtime-EclipseXtext/dsl-project/src/mymodel.dmodel"),
 //								("datatype String\n" + 
