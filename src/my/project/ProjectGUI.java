@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -42,11 +43,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -57,11 +62,17 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.border.Border;
+import javax.swing.border.LineBorder;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
 import org.chocosolver.solver.Model;
+
+import com.rws.data.Allocation;
+import com.rws.data.RailwayInfo;
+import com.rws.data.TrainInfo;
 
 @SuppressWarnings("serial")
 public class ProjectGUI extends JFrame implements Serializable {
@@ -89,10 +100,13 @@ public class ProjectGUI extends JFrame implements Serializable {
 	transient JPanel mainPanel = null;
 	transient GridBagConstraints c = new GridBagConstraints();
 
-	private List<String> fields = new ArrayList<String>();
+	private Map<String, String> fields = new HashMap<String, String>();
 	ArrayList<JButton> operations;
 	private Map<String, ArrayList<Object>> operationsMap = new HashMap<String, ArrayList<Object>>(0);
-	
+
+	private List<Allocation> allocations;
+	private List<RailwayInfo> railways;
+	private List<TrainInfo> trains;
 
 	public ProjectGUI() {
 		createUpdateFields();
@@ -109,14 +123,15 @@ public class ProjectGUI extends JFrame implements Serializable {
 
 		menu.add(settings);
 		menu.add(addInfo);
-		MenuItem setTrain = new MenuItem("Set trains");
-		setTrain.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				new AddInfoGUI("Add information", fields);
+		List<String> classes = new ArrayList<String>(0);
+		for (String value : fields.values()) {
+			if (!classes.contains(value)) {
+				classes.add(value);
+				MenuItem setInfo = new MenuItem(value);
+				setInfo.addActionListener(new InfoActionListener(value, fields));
+				addInfo.add(setInfo);
 			}
-		});
-		addInfo.add(setTrain);
+		}
 
 		MenuItem languageSettings = new MenuItem("Customize language");
 		languageSettings.setFont(new Font("Comic Sans MS", 30, 22));
@@ -137,9 +152,11 @@ public class ProjectGUI extends JFrame implements Serializable {
 
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						new ConstructionGUI("Create new construction", fields);
+						String[] temp = new String[0];
+						temp = fields.keySet().toArray(temp);
+						new ConstructionGUI("Create new construction", Arrays.asList(temp));
 					}
-					
+
 				});
 				construction.add(newConstruction);
 				MenuItem newField = new MenuItem("New field");
@@ -149,24 +166,52 @@ public class ProjectGUI extends JFrame implements Serializable {
 					public void actionPerformed(ActionEvent e) {
 						JFrame addField = new JFrame("Add new field");
 						addField.setVisible(true);
-						addField.setPreferredSize(new Dimension(230, 63));
+						addField.setPreferredSize(new Dimension(350, 200));
 						addField.setResizable(false);
 						addField.setLayout(new FlowLayout());
 						JTextField fieldName = new JTextField("");
 						fieldName.setPreferredSize(new Dimension(130, 30));
 						JButton ok = new JButton("OK");
-						ok.addActionListener(new ActionListener() {
+						Class<?>[] classes = ReadWriteFiles.getClasses("com.rws.data", false);
+						JComboBox<String> box = new JComboBox<>();
+						Border border = new LineBorder(Color.GRAY);
+						for (Class<?> className : classes) {
+							JLabel label = new JLabel(className.getSimpleName());
+							label.setBorder(border);
+							box.addItem(label.getText());
+						}
 
+						JScrollPane jscrlBox = new JScrollPane(box);
+						addField.add(new JLabel("Choose info group:"));
+						addField.add(jscrlBox);
+						ok.addActionListener(new ActionListener() {
 							@Override
 							public void actionPerformed(ActionEvent e) {
-								CreateNewField.addNewField(fieldName.getText() + " : Integer");
+								CreateNewField.addNewField(fieldName.getText() + " : Integer",
+										(String) box.getSelectedItem(), "mymodel.dmodel", "data");
+								// final String javaBin = System.getProperty("java.home") + File.separator +
+								// "bin" + File.separator + "java";
+								// try {
+								// final File currentJar = new File(
+								// ProjectGUI.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+								// if (!currentJar.getName().endsWith("jar")) {
+								// return;
+								// }
+								// final ArrayList<String> command = new ArrayList<String>();
+								// command.add(javaBin);
+								// command.add("-jar");
+								// command.add(currentJar.getPath());
+								// final ProcessBuilder builder = new ProcessBuilder(command);
+								// builder.start();
+								// System.exit(0);
+								// } catch (URISyntaxException e1) {
+								// e1.printStackTrace();
+								// } catch (IOException e1) {
+								// e1.printStackTrace();
+								// }
+
 								createUpdateFields();
 								addField.dispose();
-//								if (fields.indexOf(fieldName.getText()) == -1) {
-//									fields.add(fieldName.getText());
-//									saveFields();
-//									addField.dispose();
-//								}
 							}
 						});
 
@@ -1206,65 +1251,62 @@ public class ProjectGUI extends JFrame implements Serializable {
 	}
 
 	public JButton[][] fill() {
-		JButton[][] arr = new JButton[1][1];
-		JButton button = new JButton();
-		button.setVisible(true);
-		button.setEnabled(false);
-		button.setPreferredSize(new Dimension(20, 20));
-		arr[0][0] = button;
-		// int max = 0;
-		// int countRailways = 0;
-		// ResultSet rs = null;
-		// ArrayList<Integer> ids = new ArrayList<Integer>(0);
-		// ArrayList<Integer> lengths = new ArrayList<Integer>(0);
-		// try{
-		// PreparedStatement psR = conn.prepareStatement("select id, total_length from
-		// railways");
-		// rs = psR.executeQuery();
-		// while(rs.next()){
-		// if (rs.getInt(2) > max)
-		// max = rs.getInt(2);
-		// ids.add(rs.getInt(1));
-		// lengths.add(rs.getInt(2));
-		// countRailways++;
-		// }
-		// } catch(SQLException e){
-		//
-		// }
-		// JButton[][] arr = new JButton[countRailways][max];
-		// for (int i = 0; i < countRailways; i++){
-		// for (int j = 0; j < max; j++){
-		// JButton button = new JButton();
-		// if (j >= lengths.get(i))
-		// button.setVisible(false);
-		// button.setEnabled(false);
-		// button.setPreferredSize(new Dimension(20,20));
-		// arr[i][j] = button;
-		// }
-		// }
-		// try{
-		// Hashtable<Integer, Integer> trainsLengths = new Hashtable<Integer,
-		// Integer>();
-		// PreparedStatement psT = conn.prepareStatement("select id, length from
-		// trains");
-		// rs = psT.executeQuery();
-		// while(rs.next()){
-		// trainsLengths.put(rs.getInt(1), rs.getInt(2));
-		// }
-		//
-		// PreparedStatement psA = conn.prepareStatement("select id_train, id_railway,
-		// startnick from allocation");
-		// rs = psA.executeQuery();
-		// while(rs.next()){
-		// for (int j = rs.getInt(3) ; j < rs.getInt(3)+
-		// trainsLengths.get(rs.getInt(1)); j++){
-		// arr[rs.getInt(2)-1][j].setBackground(new Color(1));//change first index,
-		// могут быть несовпадения
-		// }
-		// }
-		// } catch(SQLException e){
-		//
-		// }
+		allocations = new ArrayList<Allocation>();
+		Allocation al = new Allocation();
+		al.setIsStore(true);
+		al.setRailwayId(1);
+		al.setStartNick(2);
+		al.setTrainId(1);
+		allocations.add(al);
+		railways = new ArrayList<RailwayInfo>();
+		RailwayInfo rail = new RailwayInfo();
+		rail.setIsStore(false);
+		rail.setRailwayId(1);
+		rail.setRailwayType(1);
+		rail.setTotalLength(20);
+		rail.setUsefulLength(15);
+		railways.add(rail);
+		trains = new ArrayList<TrainInfo>();
+		TrainInfo tr = new TrainInfo();
+		tr.setIsStore(false);
+		tr.setTrainId(1);
+		tr.setTrainLength(5);
+		tr.setTrainType(1);
+		tr.setTrainWagonToService(1);
+		trains.add(tr);
+		int max = 0;
+		int countRailways = 0;
+		ArrayList<Integer> ids = new ArrayList<Integer>(0);
+		ArrayList<Integer> lengths = new ArrayList<Integer>(0);
+		for (RailwayInfo railway : railways) {
+			if (railway.getTotalLength() > max) {
+				max = railway.getTotalLength();
+			}
+			ids.add(railway.getRailwayId());
+			lengths.add(railway.getTotalLength());
+			countRailways++;
+		}
+		JButton[][] arr = new JButton[countRailways][max];
+		for (int i = 0; i < countRailways; i++) {
+			for (int j = 0; j < max; j++) {
+				JButton button = new JButton();
+				if (j >= lengths.get(i))
+					button.setVisible(false);
+				button.setEnabled(false);
+				button.setPreferredSize(new Dimension(20, 20));
+				arr[i][j] = button;
+			}
+		}
+		Hashtable<Integer, Integer> trainsLengths = new Hashtable<Integer, Integer>();
+		for (TrainInfo train : trains) {
+			trainsLengths.put(train.getTrainId(), train.getTrainLength());
+		}
+		for (Allocation allocation : allocations) {
+			for (int i = allocation.getStartNick(); i < allocation.getStartNick()
+					+ trainsLengths.get(allocation.getTrainId()); i++) {
+				arr[allocation.getRailwayId()-1][i].setBackground(new Color(1));
+			}
+		}
 		return arr;
 	}
 
@@ -1312,38 +1354,38 @@ public class ProjectGUI extends JFrame implements Serializable {
 			if (!firstNode[i].equals("=") && !firstNode[i].equals("T")) {
 				System.out.println("r " + Integer.valueOf(firstNode[i].toString()));
 				PreparedStatement pr;
-				try {
-					pr = conn.prepareStatement("select length, wagonstoservice, type from trains where id = ?");
-					pr.setInt(1, Integer.valueOf(firstNode[i].toString()));
-					ResultSet rs = pr.executeQuery();
-					while (rs.next()) {
-						Constraint cVar1 = new Constraint(String.valueOf(rs.getInt(1)));
-						table.put("T" + firstNode[i].toString(), cVar1);
-						if (!firstLine.equals(""))
-							firstLine = firstLine + " + T" + firstNode[i].toString();
-						else
-							firstLine = "T" + firstNode[i].toString();
-						Constraint cVar2 = new Constraint(String.valueOf(rs.getInt(2)));
-						table.put("W" + firstNode[i].toString(), cVar2);
-						PreparedStatement prW = conn
-								.prepareStatement("select length from wagonslength where wagon_type = ?");
-						prW.setInt(1, rs.getInt(3));
-						ResultSet rsW = prW.executeQuery();
-						while (rsW.next()) {
-							Constraint cVar3 = new Constraint(String.valueOf(rsW.getInt(1)));
-							table.put("L" + firstNode[i].toString(), cVar3);
-							if (!secondLine.equals(""))
-								secondLine = secondLine + " + W" + firstNode[i].toString() + " * L"
-										+ firstNode[i].toString();
-							else
-								secondLine = "W" + firstNode[i].toString() + " * L" + firstNode[i].toString();
+				// try {
+				// pr = conn.prepareStatement("select length, wagonstoservice, type from trains
+				// where id = ?");
+				// pr.setInt(1, Integer.valueOf(firstNode[i].toString()));
+				// ResultSet rs = pr.executeQuery();
+				// while (rs.next()) {
+				Constraint cVar1 = new Constraint(String.valueOf(1));
+				table.put("T" + firstNode[i].toString(), cVar1);
+				if (!firstLine.equals(""))
+					firstLine = firstLine + " + T" + firstNode[i].toString();
+				else
+					firstLine = "T" + firstNode[i].toString();
+				Constraint cVar2 = new Constraint(String.valueOf(1));
+				table.put("W" + firstNode[i].toString(), cVar2);
+				// PreparedStatement prW = conn
+				// .prepareStatement("select length from wagonslength where wagon_type = ?");
+				// prW.setInt(1, 1);
+				// ResultSet rsW = prW.executeQuery();
+				// while (rsW.next()) {
+				Constraint cVar3 = new Constraint(String.valueOf(1));
+				table.put("L" + firstNode[i].toString(), cVar3);
+				if (!secondLine.equals(""))
+					secondLine = secondLine + " + W" + firstNode[i].toString() + " * L" + firstNode[i].toString();
+				else
+					secondLine = "W" + firstNode[i].toString() + " * L" + firstNode[i].toString();
 
-						}
+				// }
 
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+				// }
+				// } catch (SQLException e) {
+				// e.printStackTrace();
+				// }
 			}
 		}
 		for (int i = 0; i < thirdNode.length; i++) {
@@ -1351,62 +1393,64 @@ public class ProjectGUI extends JFrame implements Serializable {
 				railway = Integer.valueOf(thirdNode[i].toString());
 				System.out.println("rrr " + Integer.valueOf(thirdNode[i].toString()));
 				PreparedStatement pr;
-				try {
-					pr = conn.prepareStatement("select total_length, useful_length from railways where id = ?");
-					pr.setInt(1, Integer.valueOf(thirdNode[i].toString()));
-					ResultSet rs = pr.executeQuery();
-					while (rs.next()) {
-						Constraint cVar1 = new Constraint(String.valueOf(rs.getInt(1)));
-						Constraint cVar2 = new Constraint(String.valueOf(rs.getInt(2)));
-						table.put("R" + thirdNode[i].toString(), cVar1);
-						table.put("U" + thirdNode[i].toString(), cVar2);
-						firstLine = firstLine + " <= R" + thirdNode[i].toString();
-						secondLine = secondLine + " <= U" + thirdNode[i].toString();
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+				// try {
+				// pr = conn.prepareStatement("select total_length, useful_length from railways
+				// where id = ?");
+				// pr.setInt(1, Integer.valueOf(thirdNode[i].toString()));
+				// ResultSet rs = pr.executeQuery();
+				// while (rs.next()) {
+				Constraint cVar1 = new Constraint(String.valueOf(1));
+				Constraint cVar2 = new Constraint(String.valueOf(1));
+				table.put("R" + thirdNode[i].toString(), cVar1);
+				table.put("U" + thirdNode[i].toString(), cVar2);
+				firstLine = firstLine + " <= R" + thirdNode[i].toString();
+				secondLine = secondLine + " <= U" + thirdNode[i].toString();
+				// }
+				// } catch (SQLException e) {
+				// e.printStackTrace();
+				// }
 			}
 		}
 		for (int i = 0; i < secondNode.length; i++) {
 			if (!secondNode[i].equals("=") && !secondNode[i].equals("S")) {
 				System.out.println("rr " + Integer.valueOf(secondNode[i].toString()));
 				PreparedStatement pr;
-				try {
-					pr = conn.prepareStatement("select length from trains where id = ?");
-					pr.setInt(1, Integer.valueOf(firstNode[i].toString()));
-					ResultSet rs = pr.executeQuery();
-					while (rs.next()) {
-						Constraint cVar = new Constraint("[" + secondNode[i].toString() + ","
-								+ String.valueOf(Integer.valueOf(secondNode[i].toString()) + rs.getInt(1)) + "]");
-						table.put("D" + firstNode[i].toString(), cVar);
-						System.out.println("lala " + table.get("D" + firstNode[i].toString()));
-						PreparedStatement prS = conn
-								.prepareStatement("select id_train, startnick from allocation where id_railway = ?");
-						prS.setInt(1, railway);
-						ResultSet rsS = prS.executeQuery();
-						int counter = 0;
-						while (rsS.next()) {
-							if (!trainWillBeRelocated(rsS.getInt(1), relocateSqls)) {
-								counter++;
-								PreparedStatement prT = conn.prepareStatement("select length from trains where id = ?");
-								prT.setInt(1, rsS.getInt(1));
-								ResultSet rsT = prT.executeQuery();
-								while (rsT.next()) {
-									Constraint cVarF = new Constraint("[" + String.valueOf(rsS.getInt(2)) + ","
-											+ String.valueOf(rsS.getInt(2) + rsT.getInt(1)) + "]");
-									table.put("F" + firstNode[i].toString() + String.valueOf(counter), cVarF);
-									thirdLine = "D" + firstNode[i].toString() + " + F" + firstNode[i].toString()
-											+ String.valueOf(counter) + " > D" + firstNode[i].toString() + "F"
-											+ firstNode[i].toString() + String.valueOf(counter);
-									domainLines.add(thirdLine);
-								}
-							}
-						}
-					}
-				} catch (SQLException ex) {
-
+				// try {
+				// pr = conn.prepareStatement("select length from trains where id = ?");
+				// pr.setInt(1, Integer.valueOf(firstNode[i].toString()));
+				// ResultSet rs = pr.executeQuery();
+				// while (rs.next()) {
+				Constraint cVar = new Constraint("[" + secondNode[i].toString() + ","
+						+ String.valueOf(Integer.valueOf(secondNode[i].toString()) + 1) + "]");
+				table.put("D" + firstNode[i].toString(), cVar);
+				System.out.println("lala " + table.get("D" + firstNode[i].toString()));
+				// PreparedStatement prS = conn
+				// .prepareStatement("select id_train, startnick from allocation where
+				// id_railway = ?");
+				// prS.setInt(1, railway);
+				// ResultSet rsS = prS.executeQuery();
+				int counter = 0;
+				// while (rsS.next()) {
+				if (!trainWillBeRelocated(1, relocateSqls)) {
+					counter++;
+					// PreparedStatement prT = conn.prepareStatement("select length from trains
+					// where id = ?");
+					// prT.setInt(1, rsS.getInt(1));
+					// ResultSet rsT = prT.executeQuery();
+					// while (rsT.next()) {
+					Constraint cVarF = new Constraint("[" + String.valueOf(1) + "," + String.valueOf(1 + 1) + "]");
+					table.put("F" + firstNode[i].toString() + String.valueOf(counter), cVarF);
+					thirdLine = "D" + firstNode[i].toString() + " + F" + firstNode[i].toString()
+							+ String.valueOf(counter) + " > D" + firstNode[i].toString() + "F" + firstNode[i].toString()
+							+ String.valueOf(counter);
+					domainLines.add(thirdLine);
+					// }
 				}
+				// }
+				// }
+				// } catch (SQLException ex) {
+				//
+				// }
 			}
 		}
 

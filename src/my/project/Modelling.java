@@ -11,7 +11,7 @@ import org.chocosolver.solver.variables.IntVar;
 public class Modelling {
 	ArrayList<IntVar> vars = new ArrayList<IntVar>(0);
 	ArrayList<IntVar> results = new ArrayList<IntVar>(0);
-	ArrayList<String> constrains = null;
+	ArrayList<String> constraints = null;
 	ArrayList<String> domainLines = null;
 	Hashtable<String, Constraint> constraintTable = null;
 	IntVar res = null;
@@ -26,6 +26,12 @@ public class Modelling {
 	public Modelling(ArrayList<String> firstLines, ArrayList<String> domainLines,
 			Hashtable<String, Constraint> constraintTable) {
 	//	this.firstLines = firstLines;
+		for (int i = 0; i < firstLines.size(); i++) {
+			System.out.println("firstline " + firstLines.get(i));
+		}
+		for (int i = 0; i < domainLines.size(); i++) {
+			System.out.println("domainline " + domainLines.get(i));
+		}
 		this.domainLines = domainLines;
 		this.constraintTable = constraintTable;
 	}
@@ -36,8 +42,8 @@ public class Modelling {
 		Model model = new Model("some model");
 		start = 0;
 		finish = 0;
-		for (int k = 0; k < constrains.size(); k++) {
-			String line = constrains.get(k);
+		for (int k = 0; k < constraints.size(); k++) {
+			String line = constraints.get(k);
 			start = finish;
 			sum(line, model);
 		}
@@ -58,17 +64,20 @@ public class Modelling {
 		int currSpace = 0;
 		int eqPlace = 0;
 		boolean waitingForMultiplying = false;
+		boolean makeOpposite = false;
 		IntVar firstM = null;
 		for (int i = 0; i < line.length(); i++) {
 			char currChar = line.charAt(i);
 			if (currChar == ' ' && eqPlace == 0) {
 				currSpace = i;
 				String name = line.substring(temp + 1, currSpace);
-				if (name.equals("*")) {
+				if (name.equals("-")) {
+					makeOpposite = true;
+				} else if (name.equals("*")) {
 					finish--;
 					firstM = vars.remove(finish);
 					waitingForMultiplying = true;
-				} else if (!name.equals("+") && !name.equals("*")) {
+				} else if (!name.equals("+") && !name.equals("*") && !name.equals("-")) {
 					Constraint c = constraintTable.get(name);
 					if (c.type.equals("int")) {
 						IntVar intSummand = model.intVar(name, Integer.valueOf(c.value.toString()));
@@ -79,9 +88,16 @@ public class Modelling {
 									tempMult.getValue());
 							vars.add(multipliedRes);
 							waitingForMultiplying = false;
-						} else
-							vars.add(intSummand);
-						// }
+						} else {
+							if (makeOpposite) {
+								
+								IntVar opposite = model.intVar(name, -intSummand.getValue());
+								vars.add(opposite);
+								makeOpposite = false;
+							} else {
+								vars.add(intSummand);
+							}
+						}
 						finish++;
 					} else if (c.type.equals("intAny")) {
 						String constr = (String) c.value;
@@ -126,11 +142,16 @@ public class Modelling {
 			} else if (currChar == '<' || currChar == '=') {
 				eqPlace = i;
 			}
+			for (int k = 0; k < vars.size(); k++) {
+				System.out.println("vars" + i + " is " + vars.get(k));
+			}
 		}
 		IntVar[] intVars = new IntVar[finish - start];
 		for (int i = start; i < finish; i++) {
 			intVars[i - start] = vars.get(i);
+			System.out.println("intvar " + intVars[i - start]);
 		}
+		System.out.println("res " + res);
 		model.sum(intVars, "<=", res).post();
 	}
 
@@ -209,13 +230,14 @@ public class Modelling {
 			counter++;
 			// System.out.println("solved");
 
-			// System.out.println(constraintTable.get(resName).value);
+			System.out.println(constraintTable.get(resName).value);
 		}
 		if (counter == 0) {
 			throw new NoSolutionException();
 		}
 
-		String[] output = constrains.get(0).split(" ");
+		System.out.println("constraint" + constraints.get(0));
+		String[] output = constraints.get(0).split(" ");
 		String railway = "";
 		for (int i = 0; i < output.length; i++) {
 			if (output[i].equals("<=")) {
@@ -249,6 +271,26 @@ public class Modelling {
 	}
 	
 	public static void main(String args[]) {
-		
+		ArrayList<String> firstLines = new ArrayList<String>(1);
+		firstLines.add("a1 + b1 * f1 + g1 * s1 * t1 - u1 <= c1");
+		Hashtable<String, Constraint> table = new Hashtable<>();
+		table.put("a1", new Constraint("1"));
+		table.put("b1", new Constraint("{2,3}"));
+		table.put("c1", new Constraint("4"));
+		table.put("f1", new Constraint("1"));
+		table.put("g1", new Constraint("1"));
+		table.put("s1", new Constraint("3"));
+		table.put("t1", new Constraint("3"));
+		table.put("u1", new Constraint("8"));
+		table.put("D1", new Constraint("2"));
+		ArrayList<String> domainLines = new ArrayList(0);
+		Modelling mo = new Modelling(firstLines, domainLines, table);
+		mo.constraints = firstLines;
+		Model model = mo.buildModel();
+		try {
+			mo.getSolution(model);
+		} catch (NoSolutionException e) {
+			e.printStackTrace();
+		}
 	}
 }

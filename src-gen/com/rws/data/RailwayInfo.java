@@ -1,22 +1,53 @@
 package com.rws.data;
 
-public class RailwayInfo {
-    private Integer railwayLentgh;
+import java.io.Serializable;
+import java.util.Date;
+
+public class RailwayInfo implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private Boolean isStore = false;
     
-    public Integer getRailwayLentgh() {
-        return railwayLentgh;
+    public Boolean getIsStore() {
+        return isStore;
     }
     
-    public void setRailwayLentgh(Integer railwayLentgh) {
-        this.railwayLentgh = railwayLentgh;
+    public void setIsStore(Boolean isStore) {
+        this.isStore = isStore;
     }
-    private Integer railwayInfo;
+    private Integer railwayId;
     
-    public Integer getRailwayInfo() {
-        return railwayInfo;
+    public Integer getRailwayId() {
+        return railwayId;
     }
     
-    public void setRailwayInfo(Integer railwayInfo) {
-        this.railwayInfo = railwayInfo;
+    public void setRailwayId(Integer railwayId) {
+        this.railwayId = railwayId;
+    }
+    private Integer railwayType;
+    
+    public Integer getRailwayType() {
+        return railwayType;
+    }
+    
+    public void setRailwayType(Integer railwayType) {
+        this.railwayType = railwayType;
+    }
+    private Integer totalLength;
+    
+    public Integer getTotalLength() {
+        return totalLength;
+    }
+    
+    public void setTotalLength(Integer totalLength) {
+        this.totalLength = totalLength;
+    }
+    private Integer usefulLength;
+    
+    public Integer getUsefulLength() {
+        return usefulLength;
+    }
+    
+    public void setUsefulLength(Integer usefulLength) {
+        this.usefulLength = usefulLength;
     }
 }

@@ -1,24 +1,56 @@
 datatype String
 datatype Integer
+datatype Boolean
+datatype Date
 
 package com.rws.data { 
 	entity TrainInfo {
+		isStore : Boolean : false
 		trainId : Integer
+		trainType : Integer
 		trainLength : Integer
-		trainStartNick : Integer
-		method pr : System.out.println(1)
+		trainWagonToService : Integer
 	}
 	
 	entity BrigadeInfo {
-		numberOfPeople : Integer
+		isStore : Boolean : false
+		brigadeId : Integer
+		capacity : Integer
 	}
 	
 	entity WagonInfo {
-		
+		isStore : Boolean : false
+		wagonType : Integer
+		wagonLength : Integer
+	}
+	
+	entity Service {
+		isStore : Boolean : false
+		serviceId : Integer
+		standartDuration : Date
 	}
 	
 	entity RailwayInfo {
-		railwayLentgh : Integer
-		railwayInfo : Integer
+		isStore : Boolean : false
+		railwayId : Integer
+		railwayType : Integer
+		totalLength : Integer
+		usefulLength : Integer
+	}
+	
+	entity Allocation {
+		isStore : Boolean : true
+		trainId : Integer
+		railwayId : Integer
+		startNick : Integer
+	}
+	
+	entity Appointment {
+		isStore : Boolean : true
+		trainId : Integer
+		brigadeId : Integer
+		serviceId : Integer
+		timeStart : Date
+		timeEnd : Date
 	}
 }

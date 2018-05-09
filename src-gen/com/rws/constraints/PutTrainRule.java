@@ -1,7 +1,10 @@
 package com.rws.constraints;
 
-public class PutTrainRule {
-    private String trainLengthConstraint;
+import java.io.Serializable;
+
+public class PutTrainRule implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private String trainLengthConstraint = "trainLength < = all trainLength";
     
     public String getTrainLengthConstraint() {
         return trainLengthConstraint;
@@ -10,7 +13,7 @@ public class PutTrainRule {
     public void setTrainLengthConstraint(String trainLengthConstraint) {
         this.trainLengthConstraint = trainLengthConstraint;
     }
-    private String wagonsConstraint;
+    private String wagonsConstraint = "wagonLength * smth < = totalLength";
     
     public String getWagonsConstraint() {
         return wagonsConstraint;

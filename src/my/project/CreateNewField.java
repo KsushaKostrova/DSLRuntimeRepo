@@ -2,61 +2,57 @@ package my.project;
 
 import java.awt.Desktop;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 
 public class CreateNewField {
 
-	public static void addNewField(String stuffToInsert) {
-		editFile(stuffToInsert);
-		createJavaFile();
-		compile();
+	public static void addNewField(String stuffToInsert, String entity, String modelFileName, String packageName) {
+		editFieldsFile(stuffToInsert, entity, modelFileName);
+		createJavaFile("mymodel.dmodel");
+		compile(entity);
 		moveGeneratedFiles(
-				new File("/home/ksusha/runtime-EclipseXtext/dsl-project/src-gen/com/rws/data/BrigadeInfo.class"));
+				new File("/home/ksusha/runtime-EclipseXtext/dsl-project/src-gen/com/rws/data/" + entity + ".class"), packageName);
 	}
 
-	private static void editFile(String stuffToInsert) {
+	private static void editFieldsFile(String stuffToInsert, String entity, String modelFileName) {
+		File file = new File("/home/ksusha/runtime-EclipseXtext/dsl-project/src/" + modelFileName);
+		RandomAccessFile raf;
 		try {
-			Files.write(Paths.get("/home/ksusha/runtime-EclipseXtext/dsl-project/bin/mymodel.dmodel"),
-					("datatype String\n" + 
-							"datatype Integer\n" + 
-							"\n" + 
-							"package com.rws.data { \n" + 
-							"	entity TrainInfo {\n" + 
-							"		trainId : Integer\n" + 
-							"		trainLength : Integer\n" + 
-							"		trainStartNick : Integer\n" + 
-							"		method pr : System.out.println(1)\n" + 
-							"	}\n" + 
-							"	\n" + 
-							"	entity BrigadeInfo {\n" + 
-							"		numberOfPeople : Integer\n" + 
-							"		hours : Integer\n" + 
-							"		smth : String\n" + 
-							"		" + stuffToInsert + "\n" + 
-							"	}\n" + 
-							"	\n" + 
-							"	entity WagonInfo {\n" + 
-							"		\n" + 
-							"	}\n" + 
-							"	\n" + 
-							"	entity RailwayInfo {\n" + 
-							"		railwayLentgh : Integer\n" + 
-							"		railwayInfo : Integer\n" + 
-							"	}\n" + 
-							"}")
-									.getBytes());
-		} catch (IOException ex) {
-			ex.printStackTrace();
+			raf = new RandomAccessFile(file, "rw");
+			String line = raf.readLine();
+			while (line != null && !line.equals("\tentity " + entity + " {")) {
+				line = raf.readLine();
+			}
+			long position = raf.getFilePointer();
+			List<String> restOfTheFile = new ArrayList<String>(0);
+			while (line != null) {
+				line = raf.readLine();
+				if (line != null) {
+					restOfTheFile.add(line);
+				}
+			}
+			raf.seek(position);
+			raf.writeBytes("\t\t" + stuffToInsert + "\n");
+			for (String currLine : restOfTheFile) {
+				raf.writeBytes(currLine+"\n");
+			}
+			raf.close();
+			System.out.println("file has been overwritten");
+		} catch (IOException e) {
+
+			e.printStackTrace();
 		}
 
-		System.out.println("file has been overwritten");
 	}
 
-	private static void createJavaFile() {
+	public static void createJavaFile(String modelFileName) {
 		final String javaBin = System.getProperty("java.home") + File.separator + "bin";
 		final String java = javaBin + File.separator + "java";
 		try {
@@ -67,11 +63,11 @@ public class CreateNewField {
 			command.add(java);
 			command.add("-jar");
 			command.add("/home/ksusha/XtextGenerator/model-compiler.jar");
-			command.add("/home/ksusha/runtime-EclipseXtext/dsl-project/bin/mymodel.dmodel");
+			command.add("/home/ksusha/runtime-EclipseXtext/dsl-project/src/" + modelFileName);
 
 			final ProcessBuilder builder = new ProcessBuilder(command);
-			builder.start();
-			Thread.sleep(10000);
+			Process process = builder.start();
+			process.waitFor();
 			System.out.println("done compiling 1 " + command.toString());
 		} catch (URISyntaxException e2) {
 			e2.printStackTrace();
@@ -83,18 +79,18 @@ public class CreateNewField {
 		}
 	}
 
-	private static void compile() {
+	public static void compile(String entity) {
 
 		final String javac = "/usr/lib/jvm/java-8-oracle/bin" + File.separator + "javac";
 		// System.getProperty("java.home") + File.separator + "bin" + File.separator
 		// + "javac";
 		final ArrayList<String> commandCompile = new ArrayList<String>();
 		commandCompile.add(javac);
-		commandCompile.add("/home/ksusha/runtime-EclipseXtext/dsl-project/src-gen/com/rws/data/BrigadeInfo.java");
+		commandCompile.add("/home/ksusha/runtime-EclipseXtext/dsl-project/src-gen/com/rws/data/" + entity + ".java");
 		final ProcessBuilder compileBuilder = new ProcessBuilder(commandCompile);
 		try {
-			compileBuilder.start();
-			Thread.sleep(10000);
+			Process process = compileBuilder.start();
+			process.waitFor();
 			System.out.println("done compiling 2 " + commandCompile.toString());
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -103,15 +99,23 @@ public class CreateNewField {
 		}
 	}
 
-	private static void moveGeneratedFiles(File file) {
-		File destFolder = new File("/home/ksusha/runtime-EclipseXtext/dsl-project/bin/com/rws/data");// not necessarily
+	public static void moveGeneratedFiles(File file, String packageName) {
+		File destFolder = new File("/home/ksusha/runtime-EclipseXtext/dsl-project/bin/com/rws/" + packageName);// not necessarily
 																										// rws/data
+		File temp = new File(destFolder, file.getName());
+		System.out.println(temp.getAbsolutePath());
+		try {
+			System.out.println(Files.deleteIfExists(temp.toPath()));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		System.out.println(file.renameTo(new File(destFolder, file.getName())));
 	}
 
 	public static void main(String[] args) {
-		addNewField("as");
+		addNewField("name2 : Integer", "BrigadeInfo", "mymodel.dmodel", "data");
 		// moveFile(new
 		// File("/home/ksusha/runtime-EclipseXtext/dsl-project/src-gen/com/rws/data/RailwayInfo.class"));
+		//editFieldsFile("name", "BrigadeInfo", "mymodel.dmodel");
 	}
 }

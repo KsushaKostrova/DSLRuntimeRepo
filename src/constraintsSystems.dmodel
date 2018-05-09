@@ -1,9 +1,13 @@
 datatype String
 datatype Integer
 
-package com.rws.constraints { 
+package com.rws.constraints {
+	entity MoveRule {
+		MoveRuleConstraint0 : String : trainLength < = railwayTotalLength
+		MoveRuleConstraint1 : String : trainLength < = railwayUsefulLength
+	}
 	entity PutTrainRule {
-		trainLengthConstraint : String : sum(trainLentgh)<= RailwayLength
-		wagonsConstraint : String : wagonLength*smth<=totalLength
+		trainLengthConstraint : String : trainLength <= all trainLength
+		wagonsConstraint : String : wagonLength*smth <= totalLength
 	}
 }

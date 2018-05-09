@@ -1,6 +1,19 @@
 package com.rws.data;
 
-public class TrainInfo {
+import java.io.Serializable;
+import java.util.Date;
+
+public class TrainInfo implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private Boolean isStore = false;
+    
+    public Boolean getIsStore() {
+        return isStore;
+    }
+    
+    public void setIsStore(Boolean isStore) {
+        this.isStore = isStore;
+    }
     private Integer trainId;
     
     public Integer getTrainId() {
@@ -9,6 +22,15 @@ public class TrainInfo {
     
     public void setTrainId(Integer trainId) {
         this.trainId = trainId;
+    }
+    private Integer trainType;
+    
+    public Integer getTrainType() {
+        return trainType;
+    }
+    
+    public void setTrainType(Integer trainType) {
+        this.trainType = trainType;
     }
     private Integer trainLength;
     
@@ -19,16 +41,13 @@ public class TrainInfo {
     public void setTrainLength(Integer trainLength) {
         this.trainLength = trainLength;
     }
-    private Integer trainStartNick;
+    private Integer trainWagonToService;
     
-    public Integer getTrainStartNick() {
-        return trainStartNick;
+    public Integer getTrainWagonToService() {
+        return trainWagonToService;
     }
     
-    public void setTrainStartNick(Integer trainStartNick) {
-        this.trainStartNick = trainStartNick;
-    }
-    public void pr() {
-    	System.out.println(1);
+    public void setTrainWagonToService(Integer trainWagonToService) {
+        this.trainWagonToService = trainWagonToService;
     }
 }

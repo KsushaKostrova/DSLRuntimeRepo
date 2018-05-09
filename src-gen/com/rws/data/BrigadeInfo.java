@@ -1,40 +1,35 @@
 package com.rws.data;
 
-public class BrigadeInfo {
-    private Integer numberOfPeople;
+import java.io.Serializable;
+import java.util.Date;
+
+public class BrigadeInfo implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private Boolean isStore = false;
     
-    public Integer getNumberOfPeople() {
-        return numberOfPeople;
+    public Boolean getIsStore() {
+        return isStore;
     }
     
-    public void setNumberOfPeople(Integer numberOfPeople) {
-        this.numberOfPeople = numberOfPeople;
+    public void setIsStore(Boolean isStore) {
+        this.isStore = isStore;
     }
-    private Integer hours;
+    private Integer brigadeId;
     
-    public Integer getHours() {
-        return hours;
-    }
-    
-    public void setHours(Integer hours) {
-        this.hours = hours;
-    }
-    private String smth;
-    
-    public String getSmth() {
-        return smth;
+    public Integer getBrigadeId() {
+        return brigadeId;
     }
     
-    public void setSmth(String smth) {
-        this.smth = smth;
+    public void setBrigadeId(Integer brigadeId) {
+        this.brigadeId = brigadeId;
     }
-    private Integer p;
+    private Integer capacity;
     
-    public Integer getP() {
-        return p;
+    public Integer getCapacity() {
+        return capacity;
     }
     
-    public void setP(Integer p) {
-        this.p = p;
+    public void setCapacity(Integer capacity) {
+        this.capacity = capacity;
     }
 }

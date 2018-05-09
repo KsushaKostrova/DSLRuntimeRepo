@@ -1,0 +1,23 @@
+datatype String
+datatype Integer
+
+package com.rws.data { 
+	entity TrainInfo {
+		trainId : Integer
+		trainLength : Integer
+		trainStartNick : Integer
+		method pr : System.out.println(1)
+	}	
+	entity BrigadeInfo {
+		helloThere : Integer
+		numberOfPeople : Integer
+		hours : Integer
+		smth : String
+		lala : Integer
+	}
+	entity WagonInfo {
+	}
+	entity RailwayInfo {
+		hello : Integer
+	}
+}
